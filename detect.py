@@ -48,9 +48,11 @@ def analyze_image(img):
                         debug=0)
 
     tags = at_detector.detect(thresed_img)
-    tag_corners = [tag.corners for tag in sorted(tags, key=lambda x: x.tag_id)]
+    sorted_tags = sorted(tags, key=lambda x: x.tag_id)
+    tag_corners = [tag.corners for tag in sorted_tags]
+    page_index = sorted_tags[-1].tag_id - 100
 
-    # we use tag ids 3, 42, 93 and 154 (picked at random) 
+    # we use tag ids 3, 42, 93 and X (picked at random) with X > 100 and being the list index
     # order of them in the pdf is upperleft, upperright, lowerleft, lowerright
     # tag_corners is counterclockwise
     points = np.float32([
@@ -103,10 +105,11 @@ def analyze_image(img):
 
         result.append(curr)
 
-    return img, result
+    return page_index, img, result
 
 if __name__ == "__main__":
     img = cv2.imread("example-input.jpg")
-    img, ret = analyze_image(img)
+    index, img, ret = analyze_image(img)
     cv2.imwrite("example-output.jpg", img)
+    print("Scanned page", index)
     print(ret)
