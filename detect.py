@@ -8,12 +8,36 @@ TABLE_OFFSET_X = 40
 TABLE_OFFSET_Y = 680
 TABLE_WIDTH = 2000
 TABLE_HEIGHT = 1240
+TABLE_ROWS = 13
+TABLE_COLS = 25
 BLACKWHITE_THRESH = 127
 BOX_FILL_THRESH = 240
 
+def find_border(box, dx):
+    h, w = box.shape
+    startX = 0 if dx > 0 else w - 1
+
+    borderSum = 0
+    borderCount = 0
+    for y in range(h):
+        x = startX
+        while x < w and x >= 0 and box[y][x] == 0:
+            x += dx
+
+        if x > 0 and x < w:
+            borderSum += x
+            borderCount += 1
+
+    if borderCount == 0:
+        # fallback
+        return startX + dx * (w // 4)
+    else:
+        return borderSum // borderCount
+
+
 def analyze_image(img):
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    ret, img = cv2.threshold(img, BLACKWHITE_THRESH, 255, cv2.THRESH_BINARY)
+    thresed_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresed_img = cv2.threshold(thresed_img, BLACKWHITE_THRESH, 255, cv2.THRESH_BINARY)
 
     at_detector = Detector(families='tag36h11',
                         nthreads=1,
@@ -23,10 +47,8 @@ def analyze_image(img):
                         decode_sharpening=0.25,
                         debug=0)
 
-    tags = at_detector.detect(img)
+    tags = at_detector.detect(thresed_img)
     tag_corners = [tag.corners for tag in sorted(tags, key=lambda x: x.tag_id)]
-
-    img = cv2.cvtColor(img, cv2.COLOR_GRAY2BGR)
 
     # we use tag ids 3, 42, 93 and 154 (picked at random) 
     # order of them in the pdf is upperleft, upperright, lowerleft, lowerright
@@ -52,25 +74,32 @@ def analyze_image(img):
         TABLE_OFFSET_Y : TABLE_OFFSET_Y + TABLE_WIDTH
     ]
 
-    dx = TABLE_WIDTH // 25
-    dy = TABLE_HEIGHT // 13
+    thresed_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    ret, thresed_img = cv2.threshold(thresed_img, BLACKWHITE_THRESH, 255, cv2.THRESH_BINARY)
+
+    dx = TABLE_WIDTH // TABLE_COLS
+    dy = TABLE_HEIGHT // TABLE_ROWS
     result = []
     for y in range(0, TABLE_HEIGHT, dy):
         curr = []
-        for x in range(0, TABLE_WIDTH, dx):
-            x1 = x + dx // 3
-            x2 = x + dx - dx // 3
-            y1 = y + dy // 3
-            y2 = y + dy - dy // 3
-
-            if x1 > img.shape[1] or y1 > img.shape[0]:
+        x = 0
+        while x < TABLE_WIDTH:
+            box = thresed_img[y : y + dy, x : x + dx]
+            x1 = x + find_border(box, 1) + 3
+            x2 = x + find_border(box, -1) - 3
+            y1 = y + find_border(np.transpose(box), 1) + 3
+            y2 = y + find_border(np.transpose(box), -1) - 3
+            cv2.rectangle(img, (x, y), (x + dx, y + dy), (255, 0, 0), 3)
+            if x2 - x1 < 10 or y2 - y1 < 10:
+                x += dx
                 continue
 
-            avg = np.average(img[y1 : y2, x1 : x2])
+            avg = np.average(thresed_img[y1 : y2, x1 : x2])
             color = (0, 255, 0) if avg > BOX_FILL_THRESH else (0, 0, 255)
-            cv2.circle(img, (x + dx - 30, y + dy - 30), 12, color, -1)
+            cv2.rectangle(img, (x1, y1), (x2, y2), color, 3)
 
             curr.append(avg <= BOX_FILL_THRESH)
+            x = x2 + (TABLE_WIDTH // TABLE_COLS // 6)
 
         result.append(curr)
 
