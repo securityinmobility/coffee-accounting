@@ -65,8 +65,8 @@ def analyze_image(img):
     img = cv2.warpPerspective(img, M, (APRILTAG_AREA_WIDTH, APRILTAG_AREA_HEIGHT))
 
     img = img[
-        TABLE_OFFSET_X : TABLE_OFFSET_X + TABLE_HEIGHT,
-        TABLE_OFFSET_Y : TABLE_OFFSET_Y + TABLE_WIDTH
+        TABLE_OFFSET_Y : TABLE_OFFSET_Y + TABLE_HEIGHT,
+        TABLE_OFFSET_X : TABLE_OFFSET_X + TABLE_WIDTH
     ]
 
     thresed_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
@@ -75,7 +75,10 @@ def analyze_image(img):
     dx = TABLE_WIDTH // TABLE_COLS
     dy = TABLE_HEIGHT // TABLE_ROWS
     result = []
-    for y in range(0, TABLE_HEIGHT, dy):
+    y = 0
+    while y < TABLE_HEIGHT:
+        next_y = 0
+        next_y_count = 0
         curr = []
         x = 0
         while x < TABLE_WIDTH:
@@ -84,6 +87,10 @@ def analyze_image(img):
             x2 = x + find_border(box, -1) - 3
             y1 = y + find_border(np.transpose(box), 1) + 3
             y2 = y + find_border(np.transpose(box), -1) - 3
+
+            next_y += y2
+            next_y_count += 1
+
             cv2.rectangle(img, (x, y), (x + dx, y + dy), (255, 0, 0), 3)
             if x2 - x1 < 10 or y2 - y1 < 10:
                 x += dx
@@ -97,6 +104,8 @@ def analyze_image(img):
             x = x2 + (TABLE_WIDTH // TABLE_COLS // 6)
 
         result.append(curr)
+
+        y = next_y // next_y_count + (TABLE_HEIGHT // TABLE_ROWS // 3)
 
     return page_index, img, result
 
