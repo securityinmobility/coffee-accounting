@@ -1,6 +1,5 @@
 import numpy as np
 import cv2
-from dt_apriltags import Detector
 
 APRILTAG_AREA_WIDTH = 2710
 APRILTAG_AREA_HEIGHT = 1360
@@ -39,27 +38,21 @@ def analyze_image(img):
     thresed_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     ret, thresed_img = cv2.threshold(thresed_img, BLACKWHITE_THRESH, 255, cv2.THRESH_BINARY)
 
-    at_detector = Detector(families='tag36h11',
-                        nthreads=1,
-                        quad_decimate=1.0,
-                        quad_sigma=0.0,
-                        refine_edges=1,
-                        decode_sharpening=0.25,
-                        debug=0)
+    arucoDict = cv2.aruco.Dictionary_get(cv2.aruco.DICT_APRILTAG_36h11)
+    arucoParams = cv2.aruco.DetectorParameters_create()
+    corners, ids, rejected = cv2.aruco.detectMarkers(img, arucoDict, parameters=arucoParams)
 
-    tags = at_detector.detect(thresed_img)
-    sorted_tags = sorted(tags, key=lambda x: x.tag_id)
-    tag_corners = [tag.corners for tag in sorted_tags]
-    page_index = sorted_tags[-1].tag_id - 100
+    tag_corners = [x[0][0] for x in sorted(zip(corners, ids), key=lambda x: x[1])]
+    page_index = max(ids) - 100
 
     # we use tag ids 3, 42, 93 and X (picked at random) with X > 100 and being the list index
     # order of them in the pdf is upperleft, upperright, lowerleft, lowerright
     # tag_corners is counterclockwise
     points = np.float32([
-        tag_corners[0][0],
-        tag_corners[1][1],
-        tag_corners[3][2],
-        tag_corners[2][3],
+        tag_corners[0][1],
+        tag_corners[1][0],
+        tag_corners[3][3],
+        tag_corners[2][2],
     ])
 
     new_size = np.float32([
