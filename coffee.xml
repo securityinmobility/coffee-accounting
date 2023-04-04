@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<market>
+  <product>
+    <name>Kaffee</name>
+    <price>0.50 €</price>
+  </product>
+  <product>
+    <name>Milch</name>
+    <price>0.15 €</price>
+  </product>
+
+  <account name="Max Mustermann">
+    <transaction balance="10.0" date="31.03.2023" />
+  </account>
+
+  <account name="Erika Mustermannnnnnnnnnnn">
+  </account>
+</market>
