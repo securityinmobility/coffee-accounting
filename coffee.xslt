@@ -12,7 +12,7 @@
 <xsl:strip-space elements="*"/>
 
 <xsl:template match="/">
-    <svg baseProfile="tiny" version="1.2" width="297mm" height="210mm" viewBox="0 0 297 210">
+    <svg baseProfile="tiny" version="1.2" viewBox="0 0 297 210">
         <rect x="0" y="0" width="100%" height="100%" fill="none" stroke="black" stroke-width="1" />
         <svg x="10" y="10" width="277" height="190">
             <text dominant-baseline="hanging" text-anchor="middle" font-size="10">
@@ -42,7 +42,7 @@
                     <tspan x="10%">Name</tspan>
                     <xsl:for-each select ="//product">
                         <xsl:variable name="xpos" select="20 + (80 div count(//product)) * (position() - 1 div 2)"/>
-                        <tspan x="{ $xpos }%"><xsl:value-of select = "./name" /> (<xsl:value-of select = "./price" />)</tspan>
+                        <tspan x="{ $xpos }%"><xsl:value-of select = "./name" /> (<xsl:value-of select = "./price" /> <xsl:value-of select = "./unit" />)</tspan>
                     </xsl:for-each>
                 </text>
 
@@ -52,10 +52,7 @@
                 </xsl:for-each>
             </svg>
             <text x="50%" y="188" dominant-baseline="auto" text-anchor="middle" font-size="5">
-                <tspan>Bezahlung an</tspan>
-                <tspan class="monospace">paypal@example.org</tspan>
-                <tspan>oder</tspan>
-                <tspan class="monospace">DE000000000000000000000</tspan>
+                <xsl:value-of select="//payment" />
             </text>
         </svg>
         <text x="8" y="105" dominant-baseline="middle" text-anchor="middle" font-size="3" class="monospace" transform="rotate(-90 8 105)">
@@ -91,12 +88,15 @@
 </xsl:template>
 
 <xsl:template match="//account">
-    <text class="monospace" x="10%" y="{ 2 + 10 * position() }" dominant-baseline="hanging" text-anchor="middle" font-size="5">
-        <xsl:value-of select="substring(./@name, 1, 17)" />
+    <xsl:variable name="name" select="substring(./name, 1, 22)"/>
+    <text class="monospace" x="10%" y="{ 2 + 10 * position() }" dominant-baseline="hanging" text-anchor="middle" font-size="4">
+        <xsl:value-of select="$name" />
     </text>
-    <text class="monospace" x="10%" y="{ 9 + 10 * position() }" dominant-baseline="auto" text-anchor="middle" font-size="3">
-        <xsl:value-of select="format-number(sum(./transaction/@balance, 0),'#0.00 €')" />
-    </text>
+    <xsl:if test="./transaction">
+        <text class="monospace" x="10%" y="{ 9 + 10 * position() }" dominant-baseline="auto" text-anchor="middle" font-size="3">
+            <xsl:value-of select="format-number(sum(./transaction/@balance, 0),'#0.00 €')" />
+        </text>
+    </xsl:if>
 </xsl:template>
 
 </xsl:stylesheet>
