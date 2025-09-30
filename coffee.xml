@@ -9,10 +9,12 @@
     <price>0.15 €</price>
   </product>
 
-  <account name="Max Mustermann">
+  <account>
+    <name>Max Mustermann</name>
     <transaction balance="10.0" date="31.03.2023" />
   </account>
 
-  <account name="Erika Mustermannnnnnnnnnnn">
+  <account rows="4">
+    <name>Erika Mustermannnnnnnnnnnn</name>
   </account>
 </market>

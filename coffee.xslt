@@ -1,12 +1,17 @@
-<xsl:stylesheet version="2.0"
+<xsl:stylesheet version="3.0"
     xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
     xmlns:fn="http://www.w3.org/2003/05/xpath-functions"
-    xmlns:xs="http://www.w3.org/2001/XMLSchema-datatypes"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
     xmlns="http://www.w3.org/2000/svg"
     exclude-result-prefixes="#all"
 >
 <xsl:param name="revision" select="'(none)'"/>
 <xsl:param name="date" select="current-dateTime()"/>
+
+<xsl:accumulator name="y" as="xs:integer" initial-value="0">
+    <xsl:accumulator-rule match="account" select="$value + xs:integer(if (@rows) then number(@rows) else 2)" />
+</xsl:accumulator>
+<xsl:mode use-accumulators="y"/>
 
 <xsl:output method="xml" version="1.0" encoding="UTF-8" indent="yes"/>
 <xsl:strip-space elements="*"/>
@@ -21,8 +26,19 @@
             </text>
             <svg class="table" y="30" width="100%" height="151">
                 <g>
-                    <xsl:for-each select="0 to 14">
-                        <rect class="row" y="{ 10 * . }" width="100%" height="10" />
+                    <xsl:for-each select="//account">
+                        <xsl:variable name="rows" select="if (@rows) then number(@rows) else 2" />
+                        <xsl:variable name="name" select="substring(./name, 1, 22)"/>
+                        <xsl:variable name="y" select="10 + 5 * (accumulator-before('y')-$rows)" />
+                        <rect class="row" y="{$y}" width="100%" height="{ 5 * $rows }" />
+                        <text class="monospace" x="10%" y="{$y - 1 + 5*$rows idiv 2}" dominant-baseline="hanging" text-anchor="middle" font-size="4">
+                            <xsl:value-of select="$name" />
+                        </text>
+                        <xsl:if test="./transaction">
+                            <text class="monospace" x="10%" y="{$y + 9}" dominant-baseline="auto" text-anchor="middle" font-size="3">
+                                <xsl:value-of select="format-number(sum(./transaction/@balance, 0),'#0.00 €')" />
+                            </text>
+                        </xsl:if>
                     </xsl:for-each>
                 </g>
                 <g>
@@ -35,8 +51,6 @@
                         <line class="halfsep vertical" x1="{ 20 + 2 * . }%" y1="10" x2="{ 20 + 2 * . }%" y2="100%" />
                     </xsl:for-each>
                 </g>
-
-                <xsl:apply-templates select="//account" />
 
                 <text y="5" dominant-baseline="middle" text-anchor="middle" font-size="8">
                     <tspan x="10%">Name</tspan>
@@ -71,7 +85,7 @@
             rect.row {
                 fill: none;
             }
-            rect.row:nth-child(even) {
+            rect.row:nth-of-type(even) {
                 fill: #eee;
             }
 
@@ -86,17 +100,4 @@
         </style>
     </svg>
 </xsl:template>
-
-<xsl:template match="//account">
-    <xsl:variable name="name" select="substring(./name, 1, 22)"/>
-    <text class="monospace" x="10%" y="{ 2 + 10 * position() }" dominant-baseline="hanging" text-anchor="middle" font-size="4">
-        <xsl:value-of select="$name" />
-    </text>
-    <xsl:if test="./transaction">
-        <text class="monospace" x="10%" y="{ 9 + 10 * position() }" dominant-baseline="auto" text-anchor="middle" font-size="3">
-            <xsl:value-of select="format-number(sum(./transaction/@balance, 0),'#0.00 €')" />
-        </text>
-    </xsl:if>
-</xsl:template>
-
 </xsl:stylesheet>
