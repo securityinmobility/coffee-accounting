@@ -86,7 +86,7 @@
                 fill: none;
             }
             rect.row:nth-of-type(even) {
-                fill: #eee;
+                fill: #ddd;
             }
 
             .monospace {
